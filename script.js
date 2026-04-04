@@ -3,68 +3,64 @@ const bookmarkList = document.getElementById("bookmark-list");
 const bookmarkNameInput = document.getElementById("bookmark-name");
 const bookmarkUrlInput = document.getElementById("bookmark-url");
 
-document.addEventListener("DOMContentLoaded", loadBookmarks);
+let bookmarks = JSON.parse(localStorage.getItem("bookmarks")) || [];
 
-addBookmarkBtn.addEventListener("click", function () {
+addBookmarkBtn.addEventListener("click", addBookmark);
+
+function addBookmark() {
   const name = bookmarkNameInput.value.trim();
   const url = bookmarkUrlInput.value.trim();
 
   if (!name || !url) {
-    alert("Please enter both name and URL.");
+    alert("Enter both the name and URL");
     return;
-  } else {
-    if (!url.startsWith("http://") && !url.startsWith("https://")) {
-      alert("Please enter a valid URL starting with http:// or https://");
-      return;
-    }
-
-    addBookmark(name, url);
-    saveBookmark(name, url);
-    bookmarkNameInput.value = "";
-    bookmarkUrlInput.value = "";
   }
-});
 
-function addBookmark(name, url) {
-  const li = document.createElement("li");
-  const link = document.createElement("a");
-  link.href = url;
-  link.textContent = name;
-  link.target = "_blank";
+  if (!url.startsWith("http://") && !url.startsWith("https://")) {
+    alert("URL should start with http:// or https://");
+    return;
+  }
 
-  const removeButton = document.createElement("button");
-  removeButton.textContent = "Remove";
-  removeButton.addEventListener("click", function () {
-    bookmarkList.removeChild(li);
-    removeBookmarkFromStorage(name, url);
-  });
-
-  li.appendChild(link);
-  li.appendChild(removeButton);
-
-  bookmarkList.appendChild(li);
-}
-
-function getBookmarksFromStorage() {
-  const bookmarks = localStorage.getItem("bookmarks");
-  return bookmarks ? JSON.parse(bookmarks) : [];
-}
-
-function saveBookmark(name, url) {
-  const bookmarks = getBookmarksFromStorage();
+  // dodaj bookmark
   bookmarks.push({ name, url });
   localStorage.setItem("bookmarks", JSON.stringify(bookmarks));
+
+  renderBookmarks();
+
+  bookmarkNameInput.value = "";
+  bookmarkUrlInput.value = "";
 }
 
-function loadBookmarks() {
-  const bookmarks = getBookmarksFromStorage();
-  bookmarks.forEach((bookmark) => addBookmark(bookmark.name, bookmark.url));
+function renderBookmarks() {
+  bookmarkList.innerHTML = "";
+
+  bookmarks.forEach((bookmark) => {
+    const li = document.createElement("li");
+
+    const link = document.createElement("a");
+    link.href = bookmark.url;
+    link.target = "_blank";
+    link.textContent = bookmark.name;
+
+    // kreiraj remove dugme
+    const removeButton = document.createElement("button");
+    removeButton.textContent = "Remove";
+
+    removeButton.addEventListener("click", function () {
+      // ukloni iz niza i storage
+      bookmarks = bookmarks.filter(
+        (b) => b.url !== bookmark.url || b.name !== bookmark.name,
+      );
+      localStorage.setItem("bookmarks", JSON.stringify(bookmarks));
+      li.remove(); // ukloni iz DOM-a
+    });
+
+    li.appendChild(link);
+    li.appendChild(removeButton);
+
+    bookmarkList.appendChild(li);
+  });
 }
 
-function removeBookmarkFromStorage(name, url) {
-  let bookmarks = getBookmarksFromStorage();
-  bookmarks = bookmarks.filter(
-    (bookmark) => bookmark.name !== name || bookmark.url !== url,
-  );
-  localStorage.setItem("bookmarks", JSON.stringify(bookmarks));
-}
+// prikaži bookmarkove kad se stranica učita
+renderBookmarks();
